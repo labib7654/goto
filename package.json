@@ -1,0 +1,28 @@
+{
+  "name": "telegram-channel-management-bot",
+  "version": "1.0.0",
+  "description": "بوت تلغرام متقدم لإدارة القنوات والمجموعات مع لوحات تحكم",
+  "main": "index.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "telegram",
+    "bot",
+    "channel-management",
+    "group-management",
+    "dashboard",
+    "permissions"
+  ],
+  "author": "Developer",
+  "license": "MIT",
+  "dependencies": {
+    "node-telegram-bot-api": "^0.65.0"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}
