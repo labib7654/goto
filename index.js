@@ -7,7 +7,6 @@ const GroupOwnerDashboard = require('./groupOwnerDashboard');
 const CommandHandler = require('./commandHandler');
 const CallbackHandler = require('./callbackHandler');
 
-// تهيئة البوت
 const bot = new TelegramBot(config.BOT_TOKEN, { polling: true });
 const database = new Database();
 const permissionManager = new PermissionManager(database);
@@ -29,11 +28,12 @@ const callbackHandler = new CallbackHandler(
   groupOwnerDashboard
 );
 
-// ===== معالجات الأوامر الأساسية =====
-
-// أمر /start
+// أمر /start (تم تعديله)
 bot.onText(/\/start/, (msg) => {
-  commandHandler.handleStart(msg);
+  const userId = msg.from.id;
+  const chatId = msg.chat.id;
+  const firstName = msg.from.first_name;
+  commandHandler.handleStart(userId, chatId, firstName);
 });
 
 // أمر /help
@@ -56,45 +56,44 @@ bot.onText(/\/help/, (msg) => {
 
 للمزيد، استخدم القوائم التفاعلية 👇
   `;
-
-  bot.sendMessage(msg.chat.id, helpText, {
-    parse_mode: 'Markdown'
-  });
+  bot.sendMessage(msg.chat.id, helpText, { parse_mode: 'Markdown' });
 });
 
 // أمر /mygroups
 bot.onText(/\/mygroups/, (msg) => {
-  commandHandler.showMyGroups(msg);
+  const userId = msg.from.id;
+  const chatId = msg.chat.id;
+  const messageId = msg.message_id;
+  commandHandler.showMyGroups(userId, chatId, messageId);
 });
 
 // أمر /dashboard
 bot.onText(/\/dashboard/, (msg) => {
-  commandHandler.showMyDashboard(msg);
+  const userId = msg.from.id;
+  const chatId = msg.chat.id;
+  const messageId = msg.message_id;
+  commandHandler.showMyDashboard(userId, chatId, messageId);
 });
 
 // معالج الرسائل العادية
 bot.on('message', (msg) => {
-  // إذا كانت رسالة من مجموعة
   if (msg.chat.type === 'group' || msg.chat.type === 'supergroup') {
     commandHandler.handleGroupMessage(msg);
   }
-  
-  // معالجة الرسائل المنتظرة (مثل إنشاء مجموعة)
   if (msg.text && !msg.text.startsWith('/')) {
     callbackHandler.handleText(msg);
   }
 });
 
-// معالج الاستدعاءات التفاعلية
+// معالج الاستدعاءات
 bot.on('callback_query', (query) => {
   callbackHandler.handleCallback(query);
 });
 
-// معالج انضمام المستخدم للمجموعة
+// معالج انضمام المستخدم
 bot.on('new_chat_members', (msg) => {
   const groupId = msg.chat.id;
   let group = database.getGroup(groupId);
-
   if (!group) {
     group = database.addGroup(groupId, {
       title: msg.chat.title,
@@ -102,7 +101,6 @@ bot.on('new_chat_members', (msg) => {
       members: []
     });
   }
-
   msg.new_chat_members.forEach(member => {
     if (!member.is_bot) {
       database.addGroupMember(groupId, member.id);
@@ -115,25 +113,20 @@ bot.on('new_chat_members', (msg) => {
   });
 });
 
-// معالج مغادرة المستخدم للمجموعة
+// معالج مغادرة المستخدم
 bot.on('left_chat_member', (msg) => {
-  const groupId = msg.chat.id;
-  const userId = msg.left_chat_member.id;
-
-  database.removeGroupMember(groupId, userId);
+  database.removeGroupMember(msg.chat.id, msg.left_chat_member.id);
 });
 
-// معالج تحديث بيانات المجموعة
+// معالج إنشاء مجموعة جديدة
 bot.on('group_chat_created', (msg) => {
   const groupId = msg.chat.id;
   const userId = msg.from.id;
-
   database.addGroup(groupId, {
     title: msg.chat.title,
     ownerId: userId,
     members: [userId]
   });
-
   database.addUser(userId, {
     username: msg.from.username || '',
     firstName: msg.from.first_name || '',
@@ -141,25 +134,11 @@ bot.on('group_chat_created', (msg) => {
   });
 });
 
-// ===== معالجة الأخطاء =====
-
-bot.on('polling_error', (error) => {
-  console.error('Polling error:', error.code);
-});
-
+bot.on('polling_error', (error) => console.error('Polling error:', error.code));
 process.on('unhandledRejection', (reason, promise) => {
   console.error('Unhandled Rejection at:', promise, 'reason:', reason);
 });
 
-// بدء البوت
 console.log('🤖 البوت قيد التشغيل...');
-console.log(`✅ معرّف البوت: ${config.DEVELOPER_ID}`);
-console.log(`📊 قاعدة البيانات: ${config.DB_PATH}`);
-
-// حفظ معلومات البوت
-bot.getMe().then(botInfo => {
-  console.log(`🎯 اسم البوت: @${botInfo.username}`);
-  console.log('✨ البوت جاهز للاستقبال');
-});
-
-module.exports = bot;
+console.log(`✅ معرّف المطور: ${config.DEVELOPER_ID}`);
+bot.getMe().then(botInfo => console.log(`🎯 اسم البوت: @${botInfo.username}`));
