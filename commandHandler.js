@@ -9,18 +9,25 @@ class CommandHandler {
     this.groupDashboard = groupOwnerDashboard;
   }
 
-  // معالج الرسالة الافتتاحية
-  handleStart(msg) {
-    const userId = msg.from.id;
-    const firstName = msg.from.first_name || 'صديق';
+  // معالج الرسالة الافتتاحية (تقبل userId و chatId و firstName اختياري)
+  handleStart(userId, chatId, firstName = null) {
+    // جلب اسم المستخدم من قاعدة البيانات إذا لم يتم تمريره
+    if (!firstName) {
+      const user = this.db.getUser(userId);
+      firstName = user?.firstName || 'صديق';
+    }
 
-    // إضافة/تحديث المستخدم
-    this.db.addUser(userId, {
-      username: msg.from.username || '',
-      firstName: firstName,
-      lastName: msg.from.last_name || '',
-      role: config.ROLES.USER
-    });
+    // إضافة/تحديث المستخدم (باستخدام userId فقط، الباقي سيتم تعبئته من البيانات المخزنة)
+    // ملاحظة: هذا الـ handleStart يُستخدم أيضاً من الأزرار، لذا لا نريد overwrite البيانات
+    // يمكننا فقط التأكد من وجود المستخدم
+    if (!this.db.getUser(userId)) {
+      this.db.addUser(userId, {
+        username: '',
+        firstName: firstName,
+        lastName: '',
+        role: config.ROLES.USER
+      });
+    }
 
     const mainKeyboard = {
       reply_markup: {
@@ -47,7 +54,7 @@ class CommandHandler {
 اختر ما تريد من القائمة أدناه:
     `;
 
-    this.bot.sendMessage(msg.chat.id, text, mainKeyboard);
+    this.bot.sendMessage(chatId, text, mainKeyboard);
   }
 
   // معالج استقبال رسالة من مجموعة
@@ -78,7 +85,7 @@ class CommandHandler {
   }
 
   // عرض لوحة التحكم الشخصية
-  showMyDashboard(msg, userId) {
+  async showMyDashboard(userId, chatId, messageId) {
     const user = this.db.getUser(userId);
 
     let text = `
@@ -109,17 +116,17 @@ class CommandHandler {
     };
 
     this.bot.editMessageText(text, {
-      chat_id: msg.chat.id,
-      message_id: msg.message_id,
+      chat_id: chatId,
+      message_id: messageId,
       parse_mode: 'Markdown',
       ...keyboard
     }).catch(() => {
-      this.bot.sendMessage(msg.chat.id, text, keyboard);
+      this.bot.sendMessage(chatId, text, keyboard);
     });
   }
 
   // عرض مجموعات المستخدم
-  showMyGroups(msg, userId) {
+  async showMyGroups(userId, chatId, messageId) {
     const allGroups = this.db.getAllGroups();
     const userGroups = Object.values(allGroups).filter(
       g => g.members.includes(userId) && !g.deleted
@@ -148,17 +155,17 @@ class CommandHandler {
     };
 
     this.bot.editMessageText(text, {
-      chat_id: msg.chat.id,
-      message_id: msg.message_id,
+      chat_id: chatId,
+      message_id: messageId,
       parse_mode: 'Markdown',
       ...keyboard
     }).catch(() => {
-      this.bot.sendMessage(msg.chat.id, text, keyboard);
+      this.bot.sendMessage(chatId, text, keyboard);
     });
   }
 
   // عرض معلومات عن البوت
-  showAbout(msg) {
+  async showAbout(userId, chatId, messageId) {
     const text = `
 ℹ️ *معلومات عن البوت*
 
@@ -187,20 +194,21 @@ class CommandHandler {
     };
 
     this.bot.editMessageText(text, {
-      chat_id: msg.chat.id,
-      message_id: msg.message_id,
+      chat_id: chatId,
+      message_id: messageId,
       parse_mode: 'Markdown',
       ...keyboard
     }).catch(() => {
-      this.bot.sendMessage(msg.chat.id, text, keyboard);
+      this.bot.sendMessage(chatId, text, keyboard);
     });
   }
 
   // العودة للقائمة الرئيسية
-  backToMain(msg, userId) {
-    // نبني msg وهمي يحتوي on.id الصحيح لدالة handleStart
-    const fakeMsg = { ...msg, from: { ...msg.from, id: userId } };
-    this.handleStart(fakeMsg);
+  backToMain(userId, chatId, messageId) {
+    // نحتاج إلى معرفة اسم المستخدم من قاعدة البيانات
+    const user = this.db.getUser(userId);
+    const firstName = user?.firstName || 'صديق';
+    this.handleStart(userId, chatId, firstName);
   }
 }
 

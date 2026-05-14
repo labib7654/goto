@@ -8,11 +8,10 @@ class DeveloperDashboard {
   }
 
   // عرض لوحة تحكم المطور
-  async showDeveloperDashboard(msg, userId) {
-
+  async showDeveloperDashboard(userId, chatId, messageId) {
     // التحقق من أن المستخدم هو المطور
     if (!this.pm.isDeveloper(userId)) {
-      return this.bot.sendMessage(msg.chat.id, config.MESSAGES.DEVELOPER_ONLY);
+      return this.bot.sendMessage(chatId, config.MESSAGES.DEVELOPER_ONLY);
     }
 
     const keyboard = {
@@ -46,20 +45,24 @@ class DeveloperDashboard {
     `;
 
     this.bot.editMessageText(text, {
-      chat_id: msg.chat.id,
-      message_id: msg.message_id,
+      chat_id: chatId,
+      message_id: messageId,
       parse_mode: 'Markdown',
       ...keyboard
     }).catch(() => {
-      this.bot.sendMessage(msg.chat.id, text, keyboard);
+      this.bot.sendMessage(chatId, text, keyboard);
     });
   }
 
   // عرض الإحصائيات
-  async showStatistics(msg, userId) {
+  async showStatistics(userId, chatId, messageId) {
+    if (!this.pm.isDeveloper(userId)) {
+      return this.bot.sendMessage(chatId, config.MESSAGES.DEVELOPER_ONLY);
+    }
+
     const users = this.db.getAllUsers();
     const groups = this.db.getAllGroups();
-
+    
     const userCount = Object.keys(users).length;
     const groupCount = Object.keys(groups).length;
     const developerCount = Object.values(users).filter(u => u.role === config.ROLES.DEVELOPER).length;
@@ -86,17 +89,21 @@ _آخر تحديث: ${new Date().toLocaleString('ar-EG')}_
     };
 
     this.bot.editMessageText(text, {
-      chat_id: msg.chat.id,
-      message_id: msg.message_id,
+      chat_id: chatId,
+      message_id: messageId,
       parse_mode: 'Markdown',
       ...keyboard
     }).catch(() => {
-      this.bot.sendMessage(msg.chat.id, text, keyboard);
+      this.bot.sendMessage(chatId, text, keyboard);
     });
   }
 
   // عرض قائمة المستخدمين
-  async showUsers(msg, userId) {
+  async showUsers(userId, chatId, messageId) {
+    if (!this.pm.isDeveloper(userId)) {
+      return this.bot.sendMessage(chatId, config.MESSAGES.DEVELOPER_ONLY);
+    }
+
     const users = this.db.getAllUsers();
     const userList = Object.values(users).slice(0, 10);
 
@@ -115,17 +122,21 @@ _آخر تحديث: ${new Date().toLocaleString('ar-EG')}_
     };
 
     this.bot.editMessageText(text, {
-      chat_id: msg.chat.id,
-      message_id: msg.message_id,
+      chat_id: chatId,
+      message_id: messageId,
       parse_mode: 'Markdown',
       ...keyboard
     }).catch(() => {
-      this.bot.sendMessage(msg.chat.id, text, keyboard);
+      this.bot.sendMessage(chatId, text, keyboard);
     });
   }
 
   // عرض قائمة المجموعات
-  async showGroups(msg, userId) {
+  async showGroups(userId, chatId, messageId) {
+    if (!this.pm.isDeveloper(userId)) {
+      return this.bot.sendMessage(chatId, config.MESSAGES.DEVELOPER_ONLY);
+    }
+
     const groups = this.db.getAllGroups();
     const groupList = Object.values(groups).slice(0, 10);
 
@@ -146,17 +157,21 @@ _آخر تحديث: ${new Date().toLocaleString('ar-EG')}_
     };
 
     this.bot.editMessageText(text, {
-      chat_id: msg.chat.id,
-      message_id: msg.message_id,
+      chat_id: chatId,
+      message_id: messageId,
       parse_mode: 'Markdown',
       ...keyboard
     }).catch(() => {
-      this.bot.sendMessage(msg.chat.id, text, keyboard);
+      this.bot.sendMessage(chatId, text, keyboard);
     });
   }
 
   // حذف جميع البيانات
-  async deleteAllData(msg, userId) {
+  async deleteAllData(userId, chatId, messageId) {
+    if (!this.pm.isDeveloper(userId)) {
+      return this.bot.sendMessage(chatId, config.MESSAGES.DEVELOPER_ONLY);
+    }
+
     const keyboard = {
       reply_markup: {
         inline_keyboard: [
@@ -176,17 +191,21 @@ _آخر تحديث: ${new Date().toLocaleString('ar-EG')}_
     `;
 
     this.bot.editMessageText(text, {
-      chat_id: msg.chat.id,
-      message_id: msg.message_id,
+      chat_id: chatId,
+      message_id: messageId,
       parse_mode: 'Markdown',
       ...keyboard
     }).catch(() => {
-      this.bot.sendMessage(msg.chat.id, text, keyboard);
+      this.bot.sendMessage(chatId, text, keyboard);
     });
   }
 
   // تأكيد حذف البيانات
-  async confirmDeleteData(msg, userId) {
+  async confirmDeleteData(userId, chatId, messageId) {
+    if (!this.pm.isDeveloper(userId)) {
+      return this.bot.sendMessage(chatId, config.MESSAGES.DEVELOPER_ONLY);
+    }
+
     // حذف الملفات
     const fs = require('fs');
     const path = require('path');
@@ -204,8 +223,8 @@ _آخر تحديث: ${new Date().toLocaleString('ar-EG')}_
       this.bot.editMessageText(
         '✅ تم حذف جميع البيانات بنجاح',
         {
-          chat_id: msg.chat.id,
-          message_id: msg.message_id,
+          chat_id: chatId,
+          message_id: messageId,
           reply_markup: {
             inline_keyboard: [
               [{ text: 'العودة', callback_data: 'developer_dashboard' }]
@@ -217,8 +236,8 @@ _آخر تحديث: ${new Date().toLocaleString('ar-EG')}_
       this.bot.editMessageText(
         '❌ حدث خطأ أثناء حذف البيانات',
         {
-          chat_id: msg.chat.id,
-          message_id: msg.message_id,
+          chat_id: chatId,
+          message_id: messageId,
           reply_markup: {
             inline_keyboard: [
               [{ text: 'العودة', callback_data: 'developer_dashboard' }]

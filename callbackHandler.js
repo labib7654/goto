@@ -14,7 +14,9 @@ class CallbackHandler {
   async handleCallback(query) {
     const data = query.data;
     const msg = query.message;
-    const userId = query.from.id; // ✅ ID المستخدم الحقيقي من query.from
+    const userId = query.from.id;
+    const chatId = msg.chat.id;
+    const messageId = msg.message_id;
 
     // رسائل تحميل
     this.bot.answerCallbackQuery(query.id);
@@ -22,88 +24,88 @@ class CallbackHandler {
     try {
       // القائمة الرئيسية
       if (data === 'back_to_main') {
-        this.commandHandler.backToMain(msg, userId);
+        this.commandHandler.backToMain(userId, chatId, messageId);
       }
 
       // لوحة التحكم الشخصية
       else if (data === 'my_dashboard') {
-        this.commandHandler.showMyDashboard(msg, userId);
+        this.commandHandler.showMyDashboard(userId, chatId, messageId);
       }
 
       // مجموعاتي
       else if (data === 'my_groups') {
-        this.commandHandler.showMyGroups(msg, userId);
+        this.commandHandler.showMyGroups(userId, chatId, messageId);
       }
 
       // معلومات
       else if (data === 'about') {
-        this.commandHandler.showAbout(msg);
+        this.commandHandler.showAbout(userId, chatId, messageId);
       }
 
       // ===== استدعاءات لوحة التحكم للمطور =====
       else if (data === 'developer_dashboard') {
-        this.devDashboard.showDeveloperDashboard(msg, userId);
+        this.devDashboard.showDeveloperDashboard(userId, chatId, messageId);
       }
 
       else if (data === 'dev_statistics') {
-        this.devDashboard.showStatistics(msg, userId);
+        this.devDashboard.showStatistics(userId, chatId, messageId);
       }
 
       else if (data === 'dev_users') {
-        this.devDashboard.showUsers(msg, userId);
+        this.devDashboard.showUsers(userId, chatId, messageId);
       }
 
       else if (data === 'dev_groups') {
-        this.devDashboard.showGroups(msg, userId);
+        this.devDashboard.showGroups(userId, chatId, messageId);
       }
 
       else if (data === 'dev_delete_data') {
-        this.devDashboard.deleteAllData(msg, userId);
+        this.devDashboard.deleteAllData(userId, chatId, messageId);
       }
 
       else if (data === 'confirm_delete_data') {
-        await this.devDashboard.confirmDeleteData(msg, userId);
+        await this.devDashboard.confirmDeleteData(userId, chatId, messageId);
       }
 
       // ===== استدعاءات لوحة تحكم صاحب المجموعة =====
       else if (data.startsWith('group_dashboard_')) {
         const groupId = parseInt(data.split('_')[2]);
-        this.groupDashboard.showGroupDashboard(msg, groupId, userId);
+        this.groupDashboard.showGroupDashboard(userId, chatId, messageId, groupId);
       }
 
       else if (data.startsWith('group_members_')) {
         const groupId = parseInt(data.split('_')[2]);
-        this.groupDashboard.showMembers(msg, groupId, userId);
+        this.groupDashboard.showMembers(userId, chatId, messageId, groupId);
       }
 
       else if (data.startsWith('group_admins_')) {
         const groupId = parseInt(data.split('_')[2]);
-        this.groupDashboard.showAdmins(msg, groupId, userId);
+        this.groupDashboard.showAdmins(userId, chatId, messageId, groupId);
       }
 
       else if (data.startsWith('group_channels_')) {
         const groupId = parseInt(data.split('_')[2]);
-        this.groupDashboard.showChannels(msg, groupId, userId);
+        this.groupDashboard.showChannels(userId, chatId, messageId, groupId);
       }
 
       else if (data.startsWith('group_statistics_')) {
         const groupId = parseInt(data.split('_')[2]);
-        this.groupDashboard.showStatistics(msg, groupId, userId);
+        this.groupDashboard.showStatistics(userId, chatId, messageId, groupId);
       }
 
       else if (data.startsWith('delete_group_')) {
         const groupId = parseInt(data.split('_')[2]);
-        this.groupDashboard.deleteGroup(msg, groupId, userId);
+        this.groupDashboard.deleteGroup(userId, chatId, messageId, groupId);
       }
 
       else if (data.startsWith('confirm_delete_group_')) {
         const groupId = parseInt(data.split('_')[3]);
-        await this.groupDashboard.confirmDeleteGroup(msg, groupId, userId);
+        await this.groupDashboard.confirmDeleteGroup(userId, chatId, messageId, groupId);
       }
 
       // استدعاءات عامة أخرى
       else if (data === 'create_group') {
-        this.handleCreateGroup(msg, userId);
+        this.handleCreateGroup(userId, chatId);
       }
 
       // إذا كانت الاستدعاء غير معروفة
@@ -123,7 +125,7 @@ class CallbackHandler {
   }
 
   // إنشاء مجموعة جديدة
-  handleCreateGroup(msg, userId) {
+  handleCreateGroup(userId, chatId) {
     const text = `
 📝 *إنشاء مجموعة جديدة*
 
@@ -131,13 +133,11 @@ class CallbackHandler {
 (الحد الأدنى 3 أحرف، الحد الأقصى 50 حرف)
     `;
 
-    const sentMsg = this.bot.sendMessage(msg.chat.id, text);
-
+    this.bot.sendMessage(chatId, text, { parse_mode: 'Markdown' });
+    
     // حفظ الحالة للمعالجة اللاحقة
-    sentMsg.then(response => {
-      this.waitingForGroupName = true;
-      this.awaitingGroupNameUserId = userId; // ✅ استخدام userId الممرر
-    });
+    this.waitingForGroupName = true;
+    this.awaitingGroupNameUserId = userId;
   }
 
   // معالج النصوص المرسلة

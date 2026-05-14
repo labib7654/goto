@@ -8,12 +8,12 @@ class GroupOwnerDashboard {
   }
 
   // عرض لوحة تحكم صاحب المجموعة
-  async showGroupDashboard(msg, groupId, userId) {
+  async showGroupDashboard(userId, chatId, messageId, groupId) {
     const group = this.db.getGroup(groupId);
 
     // التحقق من أن المستخدم هو صاحب المجموعة
     if (!group || !this.pm.isGroupOwner(userId, groupId)) {
-      return this.bot.sendMessage(msg.chat.id, config.MESSAGES.GROUP_OWNER_ONLY);
+      return this.bot.sendMessage(chatId, config.MESSAGES.GROUP_OWNER_ONLY);
     }
 
     const memberCount = group.members.length;
@@ -55,20 +55,25 @@ class GroupOwnerDashboard {
     `;
 
     this.bot.editMessageText(text, {
-      chat_id: msg.chat.id,
-      message_id: msg.message_id,
+      chat_id: chatId,
+      message_id: messageId,
       parse_mode: 'Markdown',
       ...keyboard
     }).catch(() => {
-      this.bot.sendMessage(msg.chat.id, text, keyboard);
+      this.bot.sendMessage(chatId, text, keyboard);
     });
   }
 
   // عرض قائمة الأعضاء
-  async showMembers(msg, groupId, userId) {
+  async showMembers(userId, chatId, messageId, groupId) {
     const group = this.db.getGroup(groupId);
     if (!group) {
-      return this.bot.sendMessage(msg.chat.id, '❌ المجموعة غير موجودة');
+      return this.bot.sendMessage(chatId, '❌ المجموعة غير موجودة');
+    }
+
+    // التحقق من الصلاحية (مالك أو مشرف)
+    if (!this.pm.isGroupAdminOrOwner(userId, groupId)) {
+      return this.bot.sendMessage(chatId, config.MESSAGES.ADMIN_ONLY);
     }
 
     const members = group.members.slice(0, 20);
@@ -90,20 +95,24 @@ class GroupOwnerDashboard {
     };
 
     this.bot.editMessageText(text, {
-      chat_id: msg.chat.id,
-      message_id: msg.message_id,
+      chat_id: chatId,
+      message_id: messageId,
       parse_mode: 'Markdown',
       ...keyboard
     }).catch(() => {
-      this.bot.sendMessage(msg.chat.id, text, keyboard);
+      this.bot.sendMessage(chatId, text, keyboard);
     });
   }
 
   // عرض قائمة المشرفين
-  async showAdmins(msg, groupId, userId) {
+  async showAdmins(userId, chatId, messageId, groupId) {
     const group = this.db.getGroup(groupId);
     if (!group) {
-      return this.bot.sendMessage(msg.chat.id, '❌ المجموعة غير موجودة');
+      return this.bot.sendMessage(chatId, '❌ المجموعة غير موجودة');
+    }
+
+    if (!this.pm.isGroupAdminOrOwner(userId, groupId)) {
+      return this.bot.sendMessage(chatId, config.MESSAGES.ADMIN_ONLY);
     }
 
     let text = `👨‍💼 *مشرفو المجموعة (${group.admins.length} مشرف)*\n\n`;
@@ -124,19 +133,23 @@ class GroupOwnerDashboard {
     };
 
     this.bot.editMessageText(text, {
-      chat_id: msg.chat.id,
-      message_id: msg.message_id,
+      chat_id: chatId,
+      message_id: messageId,
       parse_mode: 'Markdown',
       ...keyboard
     }).catch(() => {
-      this.bot.sendMessage(msg.chat.id, text, keyboard);
+      this.bot.sendMessage(chatId, text, keyboard);
     });
   }
 
   // عرض القنوات
-  async showChannels(msg, groupId, userId) {
-    const channels = this.db.getGroupChannels(groupId);
+  async showChannels(userId, chatId, messageId, groupId) {
+    if (!this.pm.isGroupAdminOrOwner(userId, groupId)) {
+      return this.bot.sendMessage(chatId, config.MESSAGES.ADMIN_ONLY);
+    }
 
+    const channels = this.db.getGroupChannels(groupId);
+    
     let text = `📁 *قنوات المجموعة (${channels.length} قناة)*\n\n`;
 
     if (channels.length === 0) {
@@ -157,18 +170,26 @@ class GroupOwnerDashboard {
     };
 
     this.bot.editMessageText(text, {
-      chat_id: msg.chat.id,
-      message_id: msg.message_id,
+      chat_id: chatId,
+      message_id: messageId,
       parse_mode: 'Markdown',
       ...keyboard
     }).catch(() => {
-      this.bot.sendMessage(msg.chat.id, text, keyboard);
+      this.bot.sendMessage(chatId, text, keyboard);
     });
   }
 
   // عرض الإحصائيات
-  async showStatistics(msg, groupId, userId) {
+  async showStatistics(userId, chatId, messageId, groupId) {
     const group = this.db.getGroup(groupId);
+    if (!group) {
+      return this.bot.sendMessage(chatId, '❌ المجموعة غير موجودة');
+    }
+
+    if (!this.pm.isGroupAdminOrOwner(userId, groupId)) {
+      return this.bot.sendMessage(chatId, config.MESSAGES.ADMIN_ONLY);
+    }
+
     const channels = this.db.getGroupChannels(groupId);
 
     const text = `
@@ -192,18 +213,21 @@ class GroupOwnerDashboard {
     };
 
     this.bot.editMessageText(text, {
-      chat_id: msg.chat.id,
-      message_id: msg.message_id,
+      chat_id: chatId,
+      message_id: messageId,
       parse_mode: 'Markdown',
       ...keyboard
     }).catch(() => {
-      this.bot.sendMessage(msg.chat.id, text, keyboard);
+      this.bot.sendMessage(chatId, text, keyboard);
     });
   }
 
   // حذف المجموعة
-  async deleteGroup(msg, groupId, userId) {
+  async deleteGroup(userId, chatId, messageId, groupId) {
     const group = this.db.getGroup(groupId);
+    if (!group || !this.pm.isGroupOwner(userId, groupId)) {
+      return this.bot.sendMessage(chatId, config.MESSAGES.GROUP_OWNER_ONLY);
+    }
 
     const keyboard = {
       reply_markup: {
@@ -224,25 +248,30 @@ class GroupOwnerDashboard {
     `;
 
     this.bot.editMessageText(text, {
-      chat_id: msg.chat.id,
-      message_id: msg.message_id,
+      chat_id: chatId,
+      message_id: messageId,
       parse_mode: 'Markdown',
       ...keyboard
     }).catch(() => {
-      this.bot.sendMessage(msg.chat.id, text, keyboard);
+      this.bot.sendMessage(chatId, text, keyboard);
     });
   }
 
   // تأكيد حذف المجموعة
-  async confirmDeleteGroup(msg, groupId, userId) {
+  async confirmDeleteGroup(userId, chatId, messageId, groupId) {
+    const group = this.db.getGroup(groupId);
+    if (!group || !this.pm.isGroupOwner(userId, groupId)) {
+      return this.bot.sendMessage(chatId, config.MESSAGES.GROUP_OWNER_ONLY);
+    }
+
     try {
       this.db.updateGroup(groupId, { deleted: true, deletedAt: new Date().toISOString() });
-
+      
       this.bot.editMessageText(
         '✅ تم حذف المجموعة بنجاح',
         {
-          chat_id: msg.chat.id,
-          message_id: msg.message_id,
+          chat_id: chatId,
+          message_id: messageId,
           reply_markup: {
             inline_keyboard: [
               [{ text: 'العودة', callback_data: 'back_to_main' }]
@@ -251,7 +280,7 @@ class GroupOwnerDashboard {
         }
       );
     } catch (error) {
-      this.bot.sendMessage(msg.chat.id, '❌ حدث خطأ أثناء حذف المجموعة');
+      this.bot.sendMessage(chatId, '❌ حدث خطأ أثناء حذف المجموعة');
     }
   }
 }
