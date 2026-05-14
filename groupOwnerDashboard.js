@@ -8,8 +8,7 @@ class GroupOwnerDashboard {
   }
 
   // عرض لوحة تحكم صاحب المجموعة
-  async showGroupDashboard(msg, groupId) {
-    const userId = msg.from.id;
+  async showGroupDashboard(msg, groupId, userId) {
     const group = this.db.getGroup(groupId);
 
     // التحقق من أن المستخدم هو صاحب المجموعة
@@ -66,7 +65,7 @@ class GroupOwnerDashboard {
   }
 
   // عرض قائمة الأعضاء
-  async showMembers(msg, groupId) {
+  async showMembers(msg, groupId, userId) {
     const group = this.db.getGroup(groupId);
     if (!group) {
       return this.bot.sendMessage(msg.chat.id, '❌ المجموعة غير موجودة');
@@ -101,7 +100,7 @@ class GroupOwnerDashboard {
   }
 
   // عرض قائمة المشرفين
-  async showAdmins(msg, groupId) {
+  async showAdmins(msg, groupId, userId) {
     const group = this.db.getGroup(groupId);
     if (!group) {
       return this.bot.sendMessage(msg.chat.id, '❌ المجموعة غير موجودة');
@@ -135,9 +134,9 @@ class GroupOwnerDashboard {
   }
 
   // عرض القنوات
-  async showChannels(msg, groupId) {
+  async showChannels(msg, groupId, userId) {
     const channels = this.db.getGroupChannels(groupId);
-    
+
     let text = `📁 *قنوات المجموعة (${channels.length} قناة)*\n\n`;
 
     if (channels.length === 0) {
@@ -168,7 +167,7 @@ class GroupOwnerDashboard {
   }
 
   // عرض الإحصائيات
-  async showStatistics(msg, groupId) {
+  async showStatistics(msg, groupId, userId) {
     const group = this.db.getGroup(groupId);
     const channels = this.db.getGroupChannels(groupId);
 
@@ -203,7 +202,7 @@ class GroupOwnerDashboard {
   }
 
   // حذف المجموعة
-  async deleteGroup(msg, groupId) {
+  async deleteGroup(msg, groupId, userId) {
     const group = this.db.getGroup(groupId);
 
     const keyboard = {
@@ -235,10 +234,10 @@ class GroupOwnerDashboard {
   }
 
   // تأكيد حذف المجموعة
-  async confirmDeleteGroup(msg, groupId) {
+  async confirmDeleteGroup(msg, groupId, userId) {
     try {
       this.db.updateGroup(groupId, { deleted: true, deletedAt: new Date().toISOString() });
-      
+
       this.bot.editMessageText(
         '✅ تم حذف المجموعة بنجاح',
         {

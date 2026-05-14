@@ -8,8 +8,7 @@ class DeveloperDashboard {
   }
 
   // عرض لوحة تحكم المطور
-  async showDeveloperDashboard(msg) {
-    const userId = msg.from.id;
+  async showDeveloperDashboard(msg, userId) {
 
     // التحقق من أن المستخدم هو المطور
     if (!this.pm.isDeveloper(userId)) {
@@ -57,10 +56,10 @@ class DeveloperDashboard {
   }
 
   // عرض الإحصائيات
-  async showStatistics(msg) {
+  async showStatistics(msg, userId) {
     const users = this.db.getAllUsers();
     const groups = this.db.getAllGroups();
-    
+
     const userCount = Object.keys(users).length;
     const groupCount = Object.keys(groups).length;
     const developerCount = Object.values(users).filter(u => u.role === config.ROLES.DEVELOPER).length;
@@ -97,7 +96,7 @@ _آخر تحديث: ${new Date().toLocaleString('ar-EG')}_
   }
 
   // عرض قائمة المستخدمين
-  async showUsers(msg) {
+  async showUsers(msg, userId) {
     const users = this.db.getAllUsers();
     const userList = Object.values(users).slice(0, 10);
 
@@ -126,7 +125,7 @@ _آخر تحديث: ${new Date().toLocaleString('ar-EG')}_
   }
 
   // عرض قائمة المجموعات
-  async showGroups(msg) {
+  async showGroups(msg, userId) {
     const groups = this.db.getAllGroups();
     const groupList = Object.values(groups).slice(0, 10);
 
@@ -157,7 +156,7 @@ _آخر تحديث: ${new Date().toLocaleString('ar-EG')}_
   }
 
   // حذف جميع البيانات
-  async deleteAllData(msg) {
+  async deleteAllData(msg, userId) {
     const keyboard = {
       reply_markup: {
         inline_keyboard: [
@@ -187,7 +186,7 @@ _آخر تحديث: ${new Date().toLocaleString('ar-EG')}_
   }
 
   // تأكيد حذف البيانات
-  async confirmDeleteData(msg) {
+  async confirmDeleteData(msg, userId) {
     // حذف الملفات
     const fs = require('fs');
     const path = require('path');

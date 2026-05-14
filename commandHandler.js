@@ -78,8 +78,7 @@ class CommandHandler {
   }
 
   // عرض لوحة التحكم الشخصية
-  showMyDashboard(msg) {
-    const userId = msg.from.id;
+  showMyDashboard(msg, userId) {
     const user = this.db.getUser(userId);
 
     let text = `
@@ -120,8 +119,7 @@ class CommandHandler {
   }
 
   // عرض مجموعات المستخدم
-  showMyGroups(msg) {
-    const userId = msg.from.id;
+  showMyGroups(msg, userId) {
     const allGroups = this.db.getAllGroups();
     const userGroups = Object.values(allGroups).filter(
       g => g.members.includes(userId) && !g.deleted
@@ -199,8 +197,10 @@ class CommandHandler {
   }
 
   // العودة للقائمة الرئيسية
-  backToMain(msg) {
-    this.handleStart(msg);
+  backToMain(msg, userId) {
+    // نبني msg وهمي يحتوي on.id الصحيح لدالة handleStart
+    const fakeMsg = { ...msg, from: { ...msg.from, id: userId } };
+    this.handleStart(fakeMsg);
   }
 }
 
